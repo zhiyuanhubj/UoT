@@ -59,6 +59,11 @@ Run experiments via `run.py`, which implements the UoT algorithm, as well as the
 ## Citation
 Please cite the associated paper and star this repository if you find UoT interesting or useful in your work. Your support is greatly appreciated! Don't hesitate to open an issue if you have any questions.
 ```bibtex
-@misc{}
+
+@misc{2402.03271,
+Author = {Zhiyuan Hu and Chumin Liu and Xidong Feng and Yilun Zhao and See-Kiong Ng and Anh Tuan Luu and Junxian He and Pang Wei Koh and Bryan Hooi},
+Title = {Uncertainty of Thoughts: Uncertainty-Aware Planning Enhances Information Seeking in Large Language Models},
+Year = {2024}
+
 ```
 
