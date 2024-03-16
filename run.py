@@ -55,8 +55,12 @@ def run(args):
 
 def parse_args():
     args = argparse.ArgumentParser()
-    args.add_argument('--guesser_model', type=str, default='llama-2-70b-chat',
-                      choices=['gpt-4', 'gpt-3.5-turbo', 'claude-2', 'palm-2', 'cohere', 'llama-2-70b-chat'])
+    args.add_argument('--guesser_model', type=str, default='claude-3-opus-20240229',
+                      choices=['gpt-4', 'gpt-3.5-turbo',
+                               '_claude-2', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229',
+                               'palm-2', 'cohere', 'llama-2-70b-chat',
+                               'mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest',
+                               'gemma'])
     args.add_argument('--temperature', type=float, default=0)
     args.add_argument('--examiner_model', type=str, default='gpt-4')
 
