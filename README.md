@@ -2,6 +2,12 @@
 ![framework](pics/Framework.png)
 Uncertainty of Thought (UoT) is a novel algorithm to augment large language models with the ability to actively seek information by asking effective questions.
 
+## Update
+
+- \[15/03/2024\]: Add the implementation for Gemma
+- \[07/03/2024\]: Add the implementation for Mistral
+- \[07/03/2024\]: Add the implementation for Claude-3
+
 ## Setup
 1. Install `uot` package
 ```bash
@@ -12,22 +18,45 @@ pip install -e .
 ```
 2. Set up API keys (if require) and store in environment variable
    
-    | Model                 | Variable         | Source                                |
-    |-----------------------|------------------|---------------------------------------|
-    | llama-2-70b-chat      | TOGETHER_API_KEY | [Together](https://api.together.xyz/) |
-    | cohere                | COHERE_API_KEY   | [Cohere](https://cohere.com/)         |
-    | palm-2                | PALM2_API_KEY    | [Google AI](https://ai.google.dev/)   |
-    | claude-2              | CLAUDE2_API_KEY  | [AIProxy](https://aiproxy.io/)        |
-    | gpt-3.5-turbo / gpt-4 | OPENAI_API_KEY   | [OpenAI](https://openai.com/)         |
+    | Model                                 | Variable                                       | Source                                        |
+    |---------------------------------------|------------------------------------------------|-----------------------------------------------|
+    | llama-2-70b-chat                      | TOGETHER_API_KEY                               | [Together](https://api.together.xyz/)         |
+    | cohere                                | COHERE_API_KEY                                 | [Cohere](https://cohere.com/)                 |
+    | palm-2                                | PALM2_API_KEY                                  | [Google AI](https://ai.google.dev/)           |
+    | claude-2 (`_claude-2`)                | CLAUDE2_API_KEY                                | [AIProxy](https://aiproxy.io/)                |
+    | gpt-3.5-turbo / gpt-4                 | OPENAI_API_KEY                                 | [OpenAI](https://openai.com/)                 |
+    | claude-3-\[opus/sonnet\]-20240229     | ANTHROPIC_API_KEY                              | [Anthropic](https://www.anthropic.com/claude) |
+    | mistral-\[small/medium/large\]-latest | MISTRAL_API_KEY                                | [Mistral](https://docs.mistral.ai/)           |
+    | Gemma                                 | -- (See [_Setup for Gemma_](#setup-for-gemma)) | [Gemma](https://ai.google.dev/gemma)               |
     
+    For example (in CMD):
+    ```bash
+    export OPENAI_API_KEY=[your api key]
+    ```
+
     To set up other models, see and modify `src/uot/models.py`, and add new choices to parameter `--guesser_model` in `run.py`.
 3. install dataset [here](https://drive.google.com/drive/folders/1QhhsPinylvbgm52zX4VjwiKDxAgPvyVR?usp=sharing) and put files under `src/uot/data/`
 
 
+### Setup for Gemma
+
+- Register a Kaggle account and request license for [Gemma](https://www.kaggle.com/models/google/gemma/frameworks/pyTorch/variations/7b) 
+
+- Install dependencies and the model implementation
+```
+pip install -q -U torch immutabledict sentencepiece
+
+cd src/uot
+git clone https://github.com/google/gemma_pytorch.git
+# NOTE: clone the repo to replace the empty directory - gemma_pytorch
+```
+
+For further details, follow the [official guidance](https://ai.google.dev/gemma/docs/pytorch_gemma) to prepare the environment and code of Gemma. Related code for downloading models and complete chats are located in `src/uot/model_gemma.py`.
+
 ## Use
 Run experiments via `run.py`, which implements the UoT algorithm, as well as the naive prompting method. Arguments are as follows:
 
-- `--guesser_model` (choices=[`gpt-4`, `gpt-3.5-turbo`, `claude-2`, `palm-2`, `cohere`, `llama-2-70b-chat`]): The name of model used to plan and ask questions
+- `--guesser_model`: The name of model used to plan and ask questions
 - `--temperature`: Parameter for calling guesser model.
 - `--examiner_model`: The name of model used to provide environment feedback. Fixed to be `gpt-4` currently.
 - `--task` and `--dataset`: Select the corresponding task name and dataset according to the table below.
@@ -59,11 +88,9 @@ Run experiments via `run.py`, which implements the UoT algorithm, as well as the
 ## Citation
 Please cite the associated paper and star this repository if you find UoT interesting or useful in your work. Your support is greatly appreciated! Don't hesitate to open an issue if you have any questions.
 ```bibtex
-
 @misc{2402.03271,
 Author = {Zhiyuan Hu and Chumin Liu and Xidong Feng and Yilun Zhao and See-Kiong Ng and Anh Tuan Luu and Junxian He and Pang Wei Koh and Bryan Hooi},
 Title = {Uncertainty of Thoughts: Uncertainty-Aware Planning Enhances Information Seeking in Large Language Models},
 Year = {2024}
-
 ```
 

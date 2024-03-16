@@ -55,8 +55,12 @@ def run(args):
 
 def parse_args():
     args = argparse.ArgumentParser()
-    args.add_argument('--guesser_model', type=str, default='llama-2-70b-chat',
-                      choices=['gpt-4', 'gpt-3.5-turbo', 'claude-2', 'palm-2', 'cohere', 'llama-2-70b-chat'])
+    args.add_argument('--guesser_model', type=str, default='gemma',
+                      choices=['gpt-4', 'gpt-3.5-turbo',
+                               '_claude-2', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229',
+                               'palm-2', 'cohere', 'llama-2-70b-chat',
+                               'mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest',
+                               'gemma'])
     args.add_argument('--temperature', type=float, default=0)
     args.add_argument('--examiner_model', type=str, default='gpt-4')
 
@@ -67,7 +71,7 @@ def parse_args():
     args.add_argument('--task_start_index', type=int, default=-1)
     args.add_argument('--task_end_index', type=int, default=-1)
 
-    args.add_argument('--naive_run', action='store_true', default=False)
+    args.add_argument('--naive_run', action='store_true', default=True)
     args.add_argument('--inform', action='store_true', default=False)  # only used when naive_run
 
     args.add_argument('--reward_lambda', type=float, default=0.4)
