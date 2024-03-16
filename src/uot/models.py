@@ -125,7 +125,7 @@ def claude_response(message, model="claude-3-sonnet-20240229", temperature=0, ma
             max_tokens=max_tokens,
             messages=msg
         )
-        return res.content.text
+        return res.content[0].text
     except Exception as e:
         print(e)
         time.sleep(1)

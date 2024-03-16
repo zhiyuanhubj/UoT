@@ -49,7 +49,7 @@ def get_guesser_naive_response(task, history, ques_id):
             prompt += task.prompts.inform_prompt.format(item_list_str=', '.join(task.set))
     prompt += "\nYou must reply me with 1 question to ask only."
     msg[-1]["content"] += " " + prompt
-    rsp = response(msg)
+    rsp = response(msg, model=task.guesser_model)
 
     def extract_ques(rsp):
         message = [{"role": "user", "content": task.prompts.extract_q_prompt.format(rsp=rsp)}]
