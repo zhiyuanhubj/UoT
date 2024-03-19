@@ -2,13 +2,24 @@
 ![framework](pics/Framework.png)
 Uncertainty of Thought (UoT) is a novel algorithm to augment large language models with the ability to actively seek information by asking effective questions.
 
+We tested otwo categories of models: open-source (Llama-2-70B) and closed-source commercial (other models). The results showed that UoT achieves an average performance improvement of 57.8% in the rate of successful task completion across multiple LLMs compared with direct prompting, and also improves efficiency (i.e., the number of questions needed to complete the task).
+
+![result](pics/result.jpg)
+
+
+
 ## Update
 
+- \[19/03/2024\]: Supplement the experiment results of `Mistral-Large`, `Gemini-1.0-pro`, and `Claude-3-Opus` models.
+- \[19/03/2024\]: Add the implementation for Gemini
 - \[15/03/2024\]: Add the implementation for Gemma
 - \[07/03/2024\]: Add the implementation for Mistral
 - \[07/03/2024\]: Add the implementation for Claude-3
 
+
+
 ## Setup
+
 1. Install `uot` package
 ```bash
 git clone https://github.com/ChorlingLau/Uncertainty-of-Thought.git
@@ -22,12 +33,12 @@ pip install -e .
     |---------------------------------------|------------------------------------------------|-----------------------------------------------|
     | llama-2-70b-chat                      | TOGETHER_API_KEY                               | [Together](https://api.together.xyz/)         |
     | cohere                                | COHERE_API_KEY                                 | [Cohere](https://cohere.com/)                 |
-    | palm-2                                | PALM2_API_KEY                                  | [Google AI](https://ai.google.dev/)           |
+    | palm-2 (deprecated) / gemini-1.0-pro  | GOOGLE_API_KEY                                 | [Google AI](https://ai.google.dev/)           |
     | claude-2 (`_claude-2`)                | CLAUDE2_API_KEY                                | [AIProxy](https://aiproxy.io/)                |
     | gpt-3.5-turbo / gpt-4                 | OPENAI_API_KEY                                 | [OpenAI](https://openai.com/)                 |
     | claude-3-\[opus/sonnet\]-20240229     | ANTHROPIC_API_KEY                              | [Anthropic](https://www.anthropic.com/claude) |
     | mistral-\[small/medium/large\]-latest | MISTRAL_API_KEY                                | [Mistral](https://docs.mistral.ai/)           |
-    | Gemma                                 | -- (See [_Setup for Gemma_](#setup-for-gemma)) | [Gemma](https://ai.google.dev/gemma)               |
+    | Gemma                                 | -- (See [_Setup for Gemma_](#setup-for-gemma)) | [Gemma](https://ai.google.dev/gemma)          |
     
     For example (in CMD):
     ```bash

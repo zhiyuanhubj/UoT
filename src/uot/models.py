@@ -19,12 +19,15 @@ if COHERE_API_KEY != "":
     co = cohere.Client(COHERE_API_KEY)
     print(f"COHERE_API_KEY: ****{COHERE_API_KEY[-4:]}")
 
-PALM2_API_KEY = os.getenv("PALM2_API_KEY", "")
-if PALM2_API_KEY != "":
-    import google.generativeai as palm
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+if GOOGLE_API_KEY != "":
+    # import google.generativeai as palm
+    import google.generativeai as genai
+    import google.ai.generativelanguage as glm
 
-    palm.configure(api_key=PALM2_API_KEY)
-    print(f"PALM2_API_KEY: ****{PALM2_API_KEY[-4:]}")
+    # palm.configure(api_key=GOOGLE_API_KEY)
+    genai.configure(api_key=GOOGLE_API_KEY)
+    print(f"GOOGLE_API_KEY: ****{GOOGLE_API_KEY[-4:]}")
 
 CLAUDE2_API_KEY = os.getenv("CLAUDE2_API_KEY", "")
 if CLAUDE2_API_KEY != "":
@@ -93,6 +96,22 @@ def palm_response(message: list, model=None, temperature=0, max_tokens=500):
         print(e)
         time.sleep(1)
         return palm_response(message, temperature=temperature)
+    
+
+def gemini_response(message: list, model="gemini-1.0-pro", temperature=0, max_tokens=500):
+    msg = []
+    for m in message[:-1]:
+        role = "user" if m["role"] == "user" else "model"
+        msg.append(glm.Content(parts=[glm.Part(text=m["content"])], role=role))
+    genai_model = genai.GenerativeModel(model_name=model)
+    try:
+        chat = genai_model.start_chat()
+        res = chat.send_message(message[-1]["content"])
+        return res.text  
+    except Exception as e:
+        print(e)
+        time.sleep(3)
+        return gemini_response(message, model, temperature, max_tokens)
 
 
 def claude_aiproxy_response(message, model=None, temperature=0, max_tokens=500):
@@ -116,9 +135,13 @@ def claude_aiproxy_response(message, model=None, temperature=0, max_tokens=500):
 
 
 def claude_response(message, model="claude-3-sonnet-20240229", temperature=0, max_tokens=500):
-    msg = copy.deepcopy(message)
-    for m in msg:
-        m["role"] = "assistant" if m["role"] != "user" else "user"
+    msg = []
+    for m in message:
+        role = m["role"] if m["role"] == "user" else "assistant"
+        if msg and msg[-1]["role"] == role:
+            msg[-1]["content"] += m["content"]
+        else:
+            msg.append({"role": role, "content": m["content"]})
     try:
         res = claude_client.messages.create(
             model=model,
@@ -128,7 +151,7 @@ def claude_response(message, model="claude-3-sonnet-20240229", temperature=0, ma
         return res.content[0].text
     except Exception as e:
         print(e)
-        time.sleep(1)
+        time.sleep(3)
         return claude_response(message, model, temperature, max_tokens)
 
 
@@ -177,5 +200,6 @@ def get_response_method(model):
         "llama": llama_response,
         "mistral": mistral_response,
         "gemma": gemma_response,
+        "gemini": gemini_response,
     }
     return response_methods.get(model.split("-")[0], lambda _: NotImplementedError())
