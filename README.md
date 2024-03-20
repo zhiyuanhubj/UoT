@@ -4,7 +4,7 @@ Uncertainty of Thought (UoT) is a novel algorithm to augment large language mode
 
 We tested on two categories of models: open-source (Llama-2-70B) and closed-source commercial (other models). The results showed that UoT achieves an average performance improvement of 57.8% in the rate of successful task completion across multiple LLMs compared with direct prompting, and also improves efficiency (i.e., the number of questions needed to complete the task).
 
-![result](pics/result.jpg)
+![result](pics/result_0320.png)
 
 
 
