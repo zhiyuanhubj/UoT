@@ -28,20 +28,20 @@ Count of NO: ...
 '''
 
 # conversation
-target_question = "Are you a '{target}'?"
+target_question = "Are you experiencing '{target}'?"
 target_question_FA = "Are you experiencing '{target}'?"
 
 targeting_prompt_free = """Note that you should point out and ask what disease the patient suffer from now. 
-The question must be 'Are you a [disease name]?' You must reply me with 1 question to ask only."""
+The question must be 'Are you experiencing [disease name]?' You must reply me with 1 question to ask only."""
 targeting_prompt_free_FA = """Note that you should point out and ask what disease the patient suffer from now. 
 The question must be 'Are you experiencing [disease name]?' You must reply me with 1 question to ask only."""
 
 targeting_prompt_set = """Note that you should point out and ask what disease the patient suffer from now. The patient may suffer from one of diseases below:
 {item_list_str}, or other.
-The question must be 'Are you a [disease name]?' You must reply me with 1 question."""
+The question must be 'Are you experiencing [disease name]?' You must reply me with 1 question."""
 targeting_prompt_set_FA = """Note that you should point out and ask what disease the patient suffer from now. The patient may suffer from one of diseases below:
 {item_list_str}, or other.
-The question must be 'Are you a [disease name]?' You must reply me with 1 question."""
+The question must be 'Are you experiencing [disease name]?' You must reply me with 1 question."""
 
 guesser_prologue = '''You are a doctor and your patient self-reports that: {repo}.
 You should ask your patient question in English with symptoms which can only be answered by 'Yes' or 'No', in order to find what disease this patient suffers. 
@@ -52,7 +52,7 @@ You should ask your patient question in English with symptoms, in order to find 
 Let us begin. Ask me the first question.
 '''
 
-urge_prompt = "Based on the symptons above, if you find out the disease, please ask 'Are you a [disease name]?'"
+urge_prompt = "Based on the symptons above, if you find out the disease, please ask 'Are you experiencing [disease name]?'"
 
 inform_prompt = "The patient may suffer from one of diseases below:\n{item_list_str}"
 
@@ -86,3 +86,11 @@ If I point out correctly what disease you experience, answer me "You are right. 
 Note that never directly tell me what disease is all the time.
 Let us begin. Here is my first question.
 '''
+
+# open set
+init_open_set_prompt = '''You are a doctor and your patient self-reports that: {repo}. Please propose {size} diseases that you think your patient may suffer from.
+Your response should be: ["disease1", "disease2", ...]'''
+
+renew_open_set_prompt = '''Based on the conversation history, please propose {size} diseases that your patient may suffer from.
+The list of {size} diseases should contains {item_list}
+Your response should be: ["disease1", "disease2", ...]'''

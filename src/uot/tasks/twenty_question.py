@@ -13,13 +13,16 @@ class Q20Task:
         self.root = None
 
     def load_dataset(self, name):
-        from uot.data.data_20q import BIG_BENCH_CONCEPT, COMMON
+        from uot.data.data_20q import BIG_BENCH_CONCEPT, COMMON, THING200
         if name == "bigbench":
-            self.set = BIG_BENCH_CONCEPT
+            self.set = BIG_BENCH_CONCEPT if self.open_set_size <= 0 else self.set
             return [{"target": x} for x in BIG_BENCH_CONCEPT]
         elif name == "common":
-            self.set = COMMON
+            self.set = COMMON if self.open_set_size <= 0 else self.set
             return [{"target": x} for x in COMMON]
+        elif name == "thing":
+            self.set = THING200 if self.open_set_size <= 0 else self.set
+            return [{"target": x} for x in THING200]
         else:
             raise NotImplementedError
 
@@ -27,6 +30,6 @@ class Q20Task:
         if not root:
             self.root = UoTNode("ROOT", True, self.set, None, self.guesser_model)
         else:
-            root.n_extend_layers = self.n_extend_layers
+            root.set_config(self.n_extend_layers, not self.none_acc_reward, self.expected_reward_method)
             self.root = root
 

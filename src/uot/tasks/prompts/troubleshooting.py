@@ -28,21 +28,21 @@ Count of NO: ...
 '''
 
 # conversation
-target_question = "Are you a '{target}'?"
+target_question = "Are you experiencing '{target}'?"
 
 targeting_prompt_free = """Note that you should point out and ask what issue the client faces with now. 
-The question must be 'Are you a [issue name]?'"""
+The question must be 'Are you experiencing [issue name]?'"""
 
 targeting_prompt_set = """Note that you should point out and ask what issue the client faces with now. The client may face with one of issues below:
 {item_list_str}, or other.
-The question must be 'Are you a [issue name]?'"""
+The question must be 'Are you experiencing [issue name]?'"""
 
 guesser_prologue = '''You are a technician, and your client self-reports that: {repo}.
 You should ask your client question with specific situation which can only be answered by 'Yes' or 'No', in order to find which issue this client faces with.
 Let us begin. Ask me the first question.
 '''
 
-urge_prompt = "Based on the situations above, if you find out the issue, please ask 'Are you a [issue name]?'"
+urge_prompt = "Based on the situations above, if you find out the issue, please ask 'Are you experiencing [issue name]?'"
 
 inform_prompt = "The client may face one of issues below:\n{item_list_str}"
 
@@ -64,3 +64,11 @@ If I point out correctly what your issue is, answer me "You are right. My device
 Note that never directly tell me what the issue is all the time.
 Let us begin. Here is my first question.
 '''
+
+# open set
+init_open_set_prompt = '''You are a technician, and your client self-reports that: {repo}. Please propose {size} issues that you think your client may face with.
+Your response should be: ["issue1", "issue2", ...]'''
+
+renew_open_set_prompt = '''Based on the conversation history, please propose {size} issues that your client may face with.
+The list of {size} issues should contains {item_list}
+Your response should be: ["issue1", "issue2", ...]'''

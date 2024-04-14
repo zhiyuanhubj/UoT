@@ -53,3 +53,11 @@ If I guess correctly what X is, answer me "You guessed it. X is '{item}'."
 Note that never directly tell me what X is all the time.
 Let us begin. Here is my first question.
 '''
+
+# open set
+init_open_set_prompt = '''You are playing the game of 20 questions and you are the guesser. Based on the conversation history, please propose {size} things that you think the answerer might have in mind.
+Your response should be: ["thing1", "thing2", ...]'''
+
+renew_open_set_prompt = '''Based on the conversation history, please propose {size} things that the answerer of 20 question game might have in mind.
+The list of {size} things should contains {item_list}
+Your response should be: ["thing1", "thing2", ...]'''
