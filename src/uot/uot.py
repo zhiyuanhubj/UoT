@@ -1,6 +1,6 @@
 import numpy as np
 
-from uot.chat_utils import ques_and_cls_given_items, cls_given_repo
+from uot.chat_utils import ques_and_cls_given_items, cls_given_repo, initialize_open_set, renew_open_set
 
 
 class UoTNode:
@@ -14,10 +14,14 @@ class UoTNode:
         self.depth = self.parent.depth + 1 if self.parent else 0
         self.model = model
         self.n_extend_layers = -1
+        self.accumulation = True
+        self.expected_method = 'avg'
         self.print()
 
-    def set_n_extend_layers(self, n_extend_layers):
+    def set_config(self, n_extend_layers: int, none_acc: bool, exp: str):
         self.n_extend_layers = n_extend_layers
+        self.accumulation = not none_acc
+        self.expected_method = exp
 
     def _create_children_nodes(self, task, items: list, n, asked_ques: list = None):
         items = list(set(items))
@@ -48,12 +52,18 @@ class UoTNode:
         return return_list
 
     def handle_self_repo(self, task, repo, translate=False):
-        a = cls_given_repo(task, self.items, repo, translate, self_repo=True)
+        if task.open_set_size > 0:
+            a = initialize_open_set(task, repo)
+            node_y = UoTNode("self-report", True, a, parent=self, model=self.model)
+            node_n = UoTNode("self-report", False, [], parent=self, model=self.model)
+        else:
+            a = cls_given_repo(task, self.items, repo, translate, self_repo=True)
+            node_y = UoTNode("self-report", True, a["items_yes"], parent=self, model=self.model)
+            node_n = UoTNode("self-report", False, a["items_no"], parent=self, model=self.model)
+
         exist_leaves = []
         for c in self.children:
             exist_leaves.extend([c[0], c[1]])
-        node_y = UoTNode("self-report", True, a["items_yes"], parent=self, model=self.model)
-        node_n = UoTNode("self-report", False, a["items_no"], parent=self, model=self.model)
         if node_y in exist_leaves:
             return exist_leaves[exist_leaves.index(node_y)]
         self.children.append((node_y, node_n))
@@ -96,16 +106,30 @@ class UoTNode:
             return 1.
         return self.reward_function(c[0] / (c[0] + c[1]))
 
-    def cumulative_reward(self, node, level):
-        term = 0 if level == 1 else self.cumulative_reward(node.parent, level - 1)
+    @staticmethod
+    def accumulated_reward(node, level, accum=True):
+        term = 0 if (level == 1 or not accum) else node.accumulated_reward(node.parent, level - 1, accum)
         return node.idiv_reward + term
 
     @staticmethod
-    def avg_expected(child_list, n_extend_layers, level, prob):
+    def avg_expected(setting_node, child_list, n_extend_layers, level, prob):
         if not child_list:
             return 0
-        child_r = sum(child_node.expected_reward(n_extend_layers, level=level + 1) for child_node in child_list)
+        child_r = 0.
+        for child_node in child_list:
+            child_node.set_config(setting_node.n_extend_layers, setting_node.accumulation, setting_node.expected_method)
+            child_r += child_node.expected_reward(n_extend_layers, level=level + 1)
         return child_r * prob / len(child_list) if len(child_list) > 0 else 1
+
+    @staticmethod
+    def max_expected(setting_node, child_list, n_extend_layers, level, prob):
+        if not child_list:
+            return 0
+        child_r = 0.
+        for child_node in child_list:
+            child_node.set_config(setting_node.n_extend_layers, setting_node.accumulation, setting_node.expected_method)
+            child_r = max(child_node.expected_reward(n_extend_layers, level=level + 1), child_r)
+        return child_r * prob
 
     def expected_reward(self, n_extend_layers, level=1):
         if not self.parent:
@@ -114,17 +138,17 @@ class UoTNode:
         p = c_1 / (c_1 + c_2)
         partner = self.ans2node(not self.answer)
         if level == self.n_extend_layers - 1 or self.is_terminal or not self.children:
-            avg_1 = avg_2 = 0
+            return self.accumulated_reward(self, level, self.accumulation)
         else:
-            avg_1 = self.avg_expected(self.find_children_sep(), n_extend_layers, level, p)
-            avg_2 = partner.avg_expected(partner.find_children_sep(), n_extend_layers, level, 1 - p)
+            expected_function = self.avg_expected if self.expected_method == 'avg' else self.max_expected
+            avg_1 = expected_function(self, self.find_children_sep(), n_extend_layers, level, p)
+            avg_2 = expected_function(self, partner.find_children_sep(), n_extend_layers, level, 1 - p)
         return (p * (self.idiv_reward + avg_1) +
                 (1 - p) * (partner.idiv_reward + avg_2))
 
     @property
     def reward(self):
-        if self.n_extend_layers != self.parent.n_extend_layers:
-            self.n_extend_layers = self.parent.n_extend_layers
+        self.set_config(self.parent.n_extend_layers, self.parent.accumulation, self.expected_method)
         return self.expected_reward(self.n_extend_layers)
 
     @property
@@ -183,3 +207,16 @@ def select(task, node):
     if not leaf_nodes or not candidates:
         return None
     return max(candidates, key=lambda n: n.reward, default=None)
+
+
+def renew_node_to_root(task, node, history):
+    a = renew_open_set(task, history, node.items)
+    node_y = UoTNode("renew", True, a, parent=task.root, model=node.model)
+    node_n = UoTNode("renew", False, [], parent=task.root, model=node.model)
+    exist_leaves = []
+    for c in task.root.children:
+        exist_leaves.extend([c[0], c[1]])
+    if node_y in exist_leaves:
+        return exist_leaves[exist_leaves.index(node_y)]
+    task.root.children.append((node_y, node_n))
+    return node_y

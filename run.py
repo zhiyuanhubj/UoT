@@ -20,10 +20,20 @@ def run(args):
         args.task_end_index = min(args.task_end_index, len(task.data))
 
     if args.naive_run:
-        log_file = f'./logs/{args.task}/{args.guesser_model}_as_guesser/{args.dataset}_{args.temperature}_naive_{"" if args.inform else "un"}inform_EXAMINER{args.examiner_model}_{args.task_start_index}-{args.task_end_index}.json'
+        log_file = (f'./logs/{args.task}/{args.guesser_model}_as_guesser/{args.dataset}_{args.temperature}'
+                    f'_naive_{"" if args.inform else "un"}inform_EXAMINER{args.examiner_model}'
+                    f'_{args.task_start_index}-{args.task_end_index}.json')
     else:
-        log_file = f'./logs/{args.task}/{args.guesser_model}_as_guesser/{args.dataset}_{args.temperature}_lambda{args.reward_lambda}_L{args.n_extend_layers}_K{args.n_potential_actions}_PRUN{args.n_pruned_nodes}_EXAMINER{args.examiner_model}_{args.task_start_index}-{args.task_end_index}.json'
-        root_file = f'./roots/{args.task}/{args.guesser_model}_{args.dataset}_{args.temperature}_root.pickle'
+        log_file = (f'./logs/{args.task}/{args.guesser_model}_as_guesser/'
+                    f'{f"OS_init{args.open_set_size}_renew{args.size_to_renew}_" if args.open_set_size > 0 else ""}'
+                    f'{f"pre{args.n_pre_ask}_" if args.n_pre_ask > 0 else ""}'
+                    f'{args.dataset}_{args.temperature}_lambda{args.reward_lambda}_acc{not args.none_acc_reward}'
+                    f'_exp{args.expected_reward_method}_L{args.n_extend_layers}_K{args.n_potential_actions}'
+                    f'_PRUN{args.n_pruned_nodes}_EXAMINER{args.examiner_model}'
+                    f'_{args.task_start_index}-{args.task_end_index}.json')
+        root_file = (f'./roots/{args.task}/{args.guesser_model}'
+                     f'{f"OS_init{args.open_set_size}_" if args.open_set_size > 0 else ""}'
+                     f'_{args.dataset}_{args.temperature}_root.pickle')
         if os.path.exists(root_file):
             r = open(root_file, 'rb')
             root = pickle.load(r)
@@ -55,7 +65,7 @@ def run(args):
 
 def parse_args():
     args = argparse.ArgumentParser()
-    args.add_argument('--guesser_model', type=str, default='gemini-1.0-pro',
+    args.add_argument('--guesser_model', type=str, default='gpt-3.5-turbo',
                       choices=['gpt-4', 'gpt-3.5-turbo',
                                '_claude-2', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229',
                                'palm-2', 'cohere', 'llama-2-70b-chat',
@@ -66,10 +76,13 @@ def parse_args():
 
     args.add_argument('--task', type=str, default='20q',
                       choices=['20q', 'md', 'tb'])
-    args.add_argument('--dataset', type=str, default='bigbench',
-                      choices=['bigbench', 'common', 'DX', 'MedDG', 'FloDial'])
+    args.add_argument('--dataset', type=str, default='common',
+                      choices=['bigbench', 'common', 'thing', 'DX', 'MedDG', 'FloDial'])
     args.add_argument('--task_start_index', type=int, default=-1)
     args.add_argument('--task_end_index', type=int, default=-1)
+    args.add_argument('--open_set_size', type=int, default=-1)
+    args.add_argument('--size_to_renew', type=int, default=-1)  # only used when open_set_size > 0
+    args.add_argument('--n_pre_ask', type=int, default=0)  # only used when open_set_size > 0 and data doesn't contain self-repo
 
     args.add_argument('--naive_run', action='store_true', default=False)
     args.add_argument('--inform', action='store_true', default=False)  # only used when naive_run
@@ -84,6 +97,9 @@ def parse_args():
 
     args.add_argument('--expected_action_tokens', type=int, default=50)
     args.add_argument('--expected_target_tokens', type=int, default=10)
+
+    args.add_argument('--none_acc_reward', action='store_true', default=False)
+    args.add_argument('--expected_reward_method', type=str, default='avg', choices=['avg', 'max'])
 
     args = args.parse_args()
     return args

@@ -1,3 +1,4 @@
+import copy
 import importlib
 
 from uot.models import get_response_method
@@ -79,7 +80,7 @@ def cls_given_repo(task, items: list, repo, translate=False, self_repo=True):
             message = [{"role": "user", "content": f"Translate to English: {repo}"}]
             gpt3_response = get_response_method("gpt-3.5-turbo")
             repo = gpt3_response(message, model="gpt-3.5-turbo", max_tokens=500)
-        repo = task.prompts.self_report_prompt.format(repo=repo)
+        repo = task.prompts.self_repo_prompt.format(repo=repo)
     else:
         repo = task.prompts.free_answer_prompt.format(repo=repo)
     message = [{"role": "user", "content": task.prompts.classify_prompt.format(item_list_str=', '.join(items), repo=repo)}]
@@ -106,3 +107,35 @@ def cls_given_repo(task, items: list, repo, translate=False, self_repo=True):
     except Exception as e:
         print(e)
         return cls_given_repo(task, items, repo, translate, self_repo)
+
+
+def initialize_open_set(task, repo=""):
+    response = get_response_method(task.guesser_model)
+    size = task.open_set_size
+    
+    if isinstance(repo, str):
+        message = [{"role": "user", "content": task.prompts.init_open_set_prompt.format(repo=repo, size=size)}]
+    else:
+        message = repo + [{"role": "user", "content": task.prompts.init_open_set_prompt.format(size=size)}]
+    rsp = response(message, model=task.guesser_model, max_tokens=15*size)
+    print([rsp])
+    try:
+        rsp = set(eval(rsp))
+        return list(rsp)
+    except Exception as e:
+        print(e)
+        return initialize_open_set(task, repo)
+
+
+def renew_open_set(task, history, items):
+    response = get_response_method(task.guesser_model)
+    size = task.open_set_size
+    message = copy.deepcopy(history) + [{"role": "user", "content": task.prompts.renew_open_set_prompt.format(size=size, item_list=str(items))}]
+    rsp = response(message, model=task.guesser_model, max_tokens=15*size)
+    print([rsp])
+    try:
+        rsp = set(eval(rsp))
+        return list(rsp)
+    except Exception as e:
+        print(e)
+        return renew_open_set(task, history, items)

@@ -1,7 +1,8 @@
 import copy
 
+from uot.chat_utils import renew_open_set
 from uot.models import get_response_method
-from uot.uot import select
+from uot.uot import select, renew_node_to_root
 
 
 def get_examiner_response(task, history):
@@ -35,7 +36,7 @@ def get_guesser_response(task, history, ques_id, node):
             return n, n.question, True
 
     targeting_prompt_set = task.prompts.targeting_prompt_set_FA if task.free_answer else task.prompts.targeting_prompt_set
-    msg = [{"role": "user", "content": targeting_prompt_set.format(item_list_str=', '.join(node.items))}]
+    msg = copy.deepcopy(history) + [{"role": "user", "content": targeting_prompt_set.format(item_list_str=', '.join(node.items))}]
     return node, simplify_rsp(response(msg, model=task.guesser_model)), False
 
 
@@ -64,23 +65,37 @@ def converse(task, i):
     item = task.data[i]["target"]
     target_decl = task.prompts.target_declaration.format(target=item)
     print(target_decl)
-
-    if "self_repo" in task.data[i]:
-        guesser_prologue = task.prompts.guesser_prologue_FA if task.free_answer else task.prompts.guesser_prologue
-        history_g = [{'role': 'user', 'content': guesser_prologue.format(repo=task.data[i]["self_repo"])}]
-        print("Self-report:", task.data[i]["self_repo"])
-    else:
-        history_g = [{'role': 'user', 'content': task.prompts.guesser_prologue}]
+    print("------ DIALOGUE START ------")
+    count = 0
 
     if not task.free_answer:
         history_e = [{'role': 'user', 'content': task.prompts.examiner_prologue.format(item=item)}]
     else:
         history_e = [{'role': 'user', 'content': task.prompts.simulator_prologue.format(item=item, conv_hist=task.data[i]["conv_hist"])}]
 
-    print("------ DIALOGUE START ------")
-    count = 0
-    node, bot1_response, flag = get_guesser_response(task, history_g, count + 1, task.root)
-    node.print()
+    if "self_repo" in task.data[i]:
+        guesser_prologue = task.prompts.guesser_prologue_FA if task.free_answer else task.prompts.guesser_prologue
+        history_g = [{'role': 'user', 'content': guesser_prologue.format(repo=task.data[i]["self_repo"])}]
+        print("Self-report:", task.data[i]["self_repo"])
+        node = task.root.handle_self_repo(task, task.data[i]["self_repo"])
+    else:
+        history_g = [{'role': 'user', 'content': task.prompts.guesser_prologue}]
+        # !! for openset uot !!
+        if task.open_set_size > 0 and task.n_pre_ask > 0:
+            for _ in range(task.n_pre_ask):
+                bot1_response = get_guesser_naive_response(task, history_g, count+1)
+                print("Bot 2:", bot1_response)
+                history_g.append({'role': 'system', 'content': bot1_response})
+                history_e.append({'role': 'user', 'content': bot1_response})
+                bot2_response = get_examiner_response(task, history_e)
+                print("Bot 1:", bot2_response)
+                history_g.append({'role': 'user', 'content': bot2_response})
+                history_e.append({'role': 'system', 'content': bot2_response})
+                count += 1
+                print('------', count, '-------------')
+        node = task.root.handle_self_repo(task, history_g) if task.open_set_size > 0 else task.root
+
+    node, bot1_response, flag = get_guesser_response(task, history_g, count + 1, node)
     print("Bot 2:", bot1_response)
 
     history_g.append({'role': 'system', 'content': bot1_response})
@@ -109,6 +124,10 @@ def converse(task, i):
             print("Bot 1: Sorry, time's up. You lose this game.", target_decl)
             state = -1
             break
+
+        # renew
+        if count <= int(task.max_turn*0.3) + task.n_pre_ask and task.open_set_size > 0 and len(node.items) < task.size_to_renew:
+            node = renew_node_to_root(task, node, history_g)
 
         node, bot1_response, flag = get_guesser_response(task, history_g, count + 1, node)
         print("Bot 2:", bot1_response)
