@@ -12,7 +12,7 @@ class MDTask:
         self.max_turn = 5
         self.prompts = import_prompts_by_task("md")
         self.set = []
-        self.data = json.loads(args.dataset)
+        self.data = self.load_dataset(args.dataset)
         self.root = None
 
     def load_dataset(self, name):
