@@ -6,6 +6,8 @@ from uot.uot import select, renew_node_to_root
 
 
 def get_examiner_response(task, history):
+    if task.examiner_model == "human":
+        return input(f"[Input your answer: ] ")
     response = get_response_method(task.examiner_model)
     msg = [history[0]] + history[-3:] if len(history) > 3 else history
     return response(msg, model=task.examiner_model)
@@ -108,12 +110,13 @@ def converse(task, i):
     history_e.append({'role': 'user', 'content': bot1_response})
 
     while state == 0:
+        print(f"[TARGET: {item}]")
         bot2_response = get_examiner_response(task, history_e)  # chatbot 2 is the examiner
         if task.free_answer and flag:
             node = node.handle_free_answer(task, bot1_response, bot2_response)
-        elif bot2_response.startswith("Yes"):
+        elif bot2_response.startswith("Yes") or bot2_response.startswith("yes"):
             node = node.ans2node(True)
-        elif bot2_response.startswith("No"):
+        elif bot2_response.startswith("No") or bot2_response.startswith("no"):
             node = node.ans2node(False)
         history_g.append({'role': 'user', 'content': bot2_response})
         history_e.append({'role': 'system', 'content': bot2_response})
@@ -173,6 +176,7 @@ def naive_converse(task, i):
     history_e.append({'role': 'user', 'content': bot1_response})
 
     while True:
+        print(f"[TARGET: {item}]")
         bot2_response = get_examiner_response(task, history_e)
         history_g.append({'role': 'user', 'content': bot2_response})
         history_e.append({'role': 'system', 'content': bot2_response})
@@ -189,7 +193,7 @@ def naive_converse(task, i):
             print("Bot 1: Sorry, time's up. You lose this game.", target_decl)
             state = -1
             break
-
+        # print(history_g)
         bot1_response = get_guesser_naive_response(task, history_g, count+1)
         print("Bot 2:", bot1_response)
         history_g.append({'role': 'system', 'content': bot1_response})
