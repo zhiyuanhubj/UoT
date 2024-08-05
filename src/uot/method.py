@@ -62,11 +62,14 @@ def get_guesser_naive_response(task, history, ques_id):
 
 
 def converse(task, i):
+    # for checking api-key
+    # get_examiner_response(task, [{"role": "user", "content": "Hi"}])
+    
     item = task.data[i]["target"]
     target_decl = task.prompts.target_declaration.format(target=item)
     print(target_decl)
     print("------ DIALOGUE START ------")
-    count = 0
+    count = state = 0
 
     if not task.free_answer:
         history_e = [{'role': 'user', 'content': task.prompts.examiner_prologue.format(item=item)}]
@@ -91,6 +94,9 @@ def converse(task, i):
                 print("Bot 1:", bot2_response)
                 history_g.append({'role': 'user', 'content': bot2_response})
                 history_e.append({'role': 'system', 'content': bot2_response})
+                if "guessed it" in bot2_response or "are right." in bot2_response:
+                    state = 1
+                    break
                 count += 1
                 print('------', count, '-------------')
         node = task.root.handle_self_repo(task, history_g) if task.open_set_size > 0 else task.root
@@ -101,7 +107,7 @@ def converse(task, i):
     history_g.append({'role': 'system', 'content': bot1_response})
     history_e.append({'role': 'user', 'content': bot1_response})
 
-    while True:
+    while state == 0:
         bot2_response = get_examiner_response(task, history_e)  # chatbot 2 is the examiner
         if task.free_answer and flag:
             node = node.handle_free_answer(task, bot1_response, bot2_response)

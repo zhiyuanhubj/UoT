@@ -27,6 +27,17 @@ NO: ccc, ddd, ...
 Count of NO: ...
 '''
 
+generate_prompt_long = '''Here are all the X:
+{items_str}
+
+Please design a question about X and can only be answer by YES or NO. {asked} Then classify the possible X above based on this question.
+Notably, this question should fulfill that the count of YES and NO are almost the same with a permissible discrepancy of no more than one!
+You should think about best {n} questions to response. And your answer should be:
+Question 1: Is X ...?
+Question 2: Is X ...?
+Question 3: Is X ...?
+'''
+
 # conversation
 target_question = "Is X a '{target}'?"
 
@@ -44,6 +55,32 @@ Let us begin. Ask me the first question.
 urge_prompt = ""
 
 inform_prompt = "The X may be one of items below:\n{item_list_str}"
+
+
+classify_prompt = [
+'''Here are all the X:
+{item_list_str}
+
+Question: {question}
+
+
+For each X under the question above, tell me all X which can be answered with 'YES'.
+And your answer should be like:
+----------
+YES: aaa, bbb, ... 
+''',
+'''Here are all the X:
+{item_list_str}
+
+Question: {question}
+
+
+For each X under the question above, tell me all X which can be answered with 'NO'.
+And your answer should be like:
+----------
+NO: aaa, bbb, ... 
+'''
+]
 
 
 # examiner

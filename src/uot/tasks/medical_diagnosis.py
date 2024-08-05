@@ -29,7 +29,11 @@ class MDTask:
                 if self.open_set_size <= 0 else self.set
         else:
             raise NotImplementedError
-        return json.loads(os.path.join(os.path.dirname(__file__), f"../data/{name}.json").read())
+        data = json.loads(open(os.path.join(os.path.dirname(__file__), f"../data/{name}.json")).read())
+        import random
+        random.shuffle(data)
+        return data
+        # return json.loads(open(os.path.join(os.path.dirname(__file__), f"../data/{name}.json")).read())
 
     def create_root(self, root=None):
         if not root:

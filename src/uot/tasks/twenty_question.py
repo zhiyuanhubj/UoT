@@ -1,5 +1,14 @@
+import csv
 from uot.chat_utils import import_prompts_by_task
 from uot.uot import UoTNode
+
+def read_csv_file(filename):
+    things_dataset = []
+    with open(filename, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            things_dataset.append(row['THINGS-concept'])
+    return things_dataset
 
 
 class Q20Task:
@@ -21,7 +30,8 @@ class Q20Task:
             self.set = COMMON if self.open_set_size <= 0 else self.set
             return [{"target": x} for x in COMMON]
         elif name == "thing":
-            self.set = THING200 if self.open_set_size <= 0 else self.set
+            # self.set = THING200 if self.open_set_size <= 0 else self.set
+            self.set = read_csv_file('/home/zhiyuan/20q/things.csv') if self.open_set_size <= 0 else self.set
             return [{"target": x} for x in THING200]
         else:
             raise NotImplementedError

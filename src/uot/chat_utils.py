@@ -21,9 +21,12 @@ def import_prompts_by_task(task_name):
 
 
 def ques_and_cls_given_items(task, items: list, n, asked_ques: list = None, rest=False):
-    response = get_response_method(task.guesser_model)
-    if len(items) <= 1:
+    if len(items) > 500:
+        return ques_and_cls_given_items_long(task, items, n, asked_ques)
+    elif len(items) <= 1:
         return None
+    
+    response = get_response_method(task.guesser_model)
 
     if rest:
         asked = '\n'.join([f"Question {i + 1}: {asked_ques[i]}" for i in range(len(asked_ques))])
@@ -71,6 +74,37 @@ def ques_and_cls_given_items(task, items: list, n, asked_ques: list = None, rest
         except Exception as e:
             print(e)
             return ques_and_cls_given_items(task, items, n, asked_ques, rest)
+        
+
+def ques_and_cls_given_items_long(task, items: list, n, asked_ques: list = None):
+    response = get_response_method(task.guesser_model)
+    if len(items) <= 1:
+        return None
+
+    asked = "(The question should not be '" + "' or '".join(asked_ques) + "')" if asked_ques else ""
+    message = [{"role": "user", "content": task.prompts.generate_prompt_long.format(items_str=', '.join(items), n=n, asked=asked)}]
+    print(message)
+    rsp = "#" + response(message, model=task.guesser_model, max_tokens=2000)
+    print([rsp])
+
+    def process_ans(rsp):
+        ans = []
+        for i in range(n):
+            if f"Question {i + 1}: " not in rsp:
+                continue
+            rsp = rsp.split(f"Question {i + 1}: ", 1)[1]
+            q = rsp.split("\n", 1)[0]
+            res = {}
+            res["items_yes"] = cls_given_q(task, items, q, True)
+            res["items_no"] = cls_given_q(task, items, q, False)
+            res["question"] = q
+            ans.append(res)
+        return ans
+    try:
+        return process_ans(rsp)
+    except Exception as e:
+        print(e)
+        return ques_and_cls_given_items_long(task, items, n, asked_ques)
 
 
 def cls_given_repo(task, items: list, repo, translate=False, self_repo=True):
@@ -101,12 +135,44 @@ def cls_given_repo(task, items: list, repo, translate=False, self_repo=True):
         items_n = extract_items(rsp, "NO: ")
         if len(items_y) == 0 and len(items_n) == 0:
             raise ValueError("No items extracted from the response.")
-
         return {"items_yes": items_y, "items_no": items_n}
 
     except Exception as e:
         print(e)
         return cls_given_repo(task, items, repo, translate, self_repo)
+    
+    
+def cls_given_q(task, items: list, question, answer):
+    response = get_response_method(task.guesser_model)
+    index = 0 if answer else 1
+    message = [{"role": "user", "content": task.prompts.classify_prompt[index].format(
+        item_list_str=', '.join(items), question=question)}]
+    rsp = response(message, model=task.guesser_model)
+    print([rsp])
+
+    def extract_items(rsp, keyword):
+        _items = []
+        if keyword in rsp:
+            rsp_part = rsp.split(keyword, 1)[1]
+            if not rsp_part or rsp_part[0] != '\n':
+                _items = rsp_part.split("\n", 1)[0].split(", ")
+                _items = list(set(_items))
+        return _items
+    items = None
+    try:
+        kw = "YES: " if answer else "NO: "
+        items = extract_items(rsp, kw)
+        if len(items) == 0:
+            raise ValueError("No items extracted from the response.")
+        return items
+    except Exception as e:
+        print(e)
+        if items is None:
+            return cls_given_repo(task, items, question, answer)
+        else:
+            print("No items extracted from the response.")
+            return []
+        
 
 
 def initialize_open_set(task, repo=""):
@@ -117,9 +183,12 @@ def initialize_open_set(task, repo=""):
         message = [{"role": "user", "content": task.prompts.init_open_set_prompt.format(repo=repo, size=size)}]
     else:
         message = repo + [{"role": "user", "content": task.prompts.init_open_set_prompt.format(size=size)}]
-    rsp = response(message, model=task.guesser_model, max_tokens=15*size)
-    print([rsp])
+    rsp = response(message, model=task.guesser_model, max_tokens=50+15*size)
+    # print([rsp])
     try:
+        if "[" in rsp and "]" in rsp:
+            rsp = '[' + rsp.split('[')[1].split(']')[0] + ']'
+        print([rsp])
         rsp = set(eval(rsp))
         return list(rsp)
     except Exception as e:
@@ -132,8 +201,11 @@ def renew_open_set(task, history, items):
     size = task.open_set_size
     message = copy.deepcopy(history) + [{"role": "user", "content": task.prompts.renew_open_set_prompt.format(size=size, item_list=str(items))}]
     rsp = response(message, model=task.guesser_model, max_tokens=15*size)
-    print([rsp])
+    # print([rsp])
     try:
+        if "[" in rsp and "]" in rsp:
+            rsp = '[' + rsp.split('[')[1].split(']')[0] + ']'
+        print([rsp])
         rsp = set(eval(rsp))
         return list(rsp)
     except Exception as e:

@@ -1,7 +1,9 @@
 import json
 
 
-def evaluate_performance(file, task):
+def evaluate_performance(file, task, max_turn=None):
+    if not max_turn:
+        max_turn = task.max_turn
     cnt = success = 0
     length = success_length = 0
     with (open(file, 'r') as f):
